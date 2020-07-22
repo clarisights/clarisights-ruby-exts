@@ -1,0 +1,5 @@
+*.lock
+/tmp
+lib/**/*.bundle
+lib/**/*.so
+.ruby-version
