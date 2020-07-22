@@ -12,10 +12,11 @@
  *
  * Pre-requisites
  * 1. locale is set (man 3 setlocale)
- * 2. original string is utf-8 encoded
+ * 2. original string is utf-8 or usascii encoded
  */
 
 static rb_encoding *utf8_enc = NULL;
+static rb_encoding *usascii_enc = NULL;
 
 /*
  * Some old or poorly-configured versions of Oniguruma say 6 here, but that's
@@ -24,11 +25,30 @@ static rb_encoding *utf8_enc = NULL;
 #define MAX_ENC_LEN 4
 
 /*
- * Downcases the supplied string according to POSIX locale semantics. Returns
- * a freshly allocated string that the caller is responsible for.
+ * Downcases the supplied string according to US-ASCII semantics.
+ * Returns a freshly allocated string that the caller is responsible for.
  */
 static char *
-posix_downcase(const char *string, size_t len)
+posix_downcase_usascii(const char *string, size_t len)
+{
+  char *lower_str;
+  size_t curr_char;
+  unsigned char c;
+  lower_str = (char *) malloc(len);
+  for (curr_char = 0; curr_char < len; curr_char++)
+    {
+      c = string[curr_char];
+      lower_str[curr_char] = (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c;
+    }
+  return lower_str;
+}
+
+/*
+ * Downcases the supplied string according to UTF-8 POSIX locale semantics.
+ * Returns a freshly allocated string that the caller is responsible for.
+ */
+static char *
+posix_downcase_utf8(const char *string, size_t len)
 {
   char *input_str, *output_str;
   size_t input_bytes, output_bytes;
@@ -65,25 +85,37 @@ static VALUE
 rb_utf8_str_posix_downcase(VALUE rb_string)
 {
   char *result_cstr;
+  rb_encoding *input_str_enc;
   VALUE result;
+  char *input_str;
+  size_t len;
 
   /* Check if the receiver is string. Raise `TypeError` otherwise */
   Check_Type(rb_string, T_STRING);
 
   /*
-   * Only UTF-8 encoding is supproted at the moment for posix downcase.
-   * Raises Encoding::CompatibilityError if encoding of reciever is not UTF-8.
+   * Only UTF-8 and US-ASCII encoding are supported at the moment for posix
+   * downcase. Raises Encoding::CompatibilityError if encoding of reciever is
+   * not UTF-8 or US-ASCII.
    */
-  if (rb_enc_get(rb_string) != utf8_enc)
+  input_str_enc = rb_enc_get(rb_string);
+  if (input_str_enc != utf8_enc && input_str_enc != usascii_enc)
     {
       rb_raise(rb_eEncCompatError,
-               "Supplied argument of encoding %s, only %s supported",
-               rb_enc_name(rb_enc_get(rb_string)),
-               rb_enc_name(utf8_enc));
+               "Supplied argument of encoding %s, only UTF-8 and US-ASCII are supported",
+               rb_enc_name(input_str_enc));
     }
 
-  result_cstr = posix_downcase(RSTRING_PTR(rb_string), RSTRING_LEN(rb_string));
-  result = rb_enc_str_new_cstr(result_cstr, utf8_enc);
+  input_str = RSTRING_PTR(rb_string);
+  len = RSTRING_LEN(rb_string);
+  /* Downcase string based on rb_string encoding */
+  if (input_str_enc == utf8_enc)
+    result_cstr = posix_downcase_utf8(input_str, len);
+  else
+    /* This will be US-ASCII since we only support two encodings */
+    result_cstr = posix_downcase_usascii(input_str, len);
+
+  result = rb_enc_str_new_cstr(result_cstr, input_str_enc);
 
   /* free resources */
   free(result_cstr);
@@ -95,6 +127,7 @@ void
 Init_posix_case_conversion(void)
 {
   utf8_enc = rb_utf8_encoding();
+  usascii_enc = rb_usascii_encoding();
   /*
    * Define `posix_downcase` instance method for ruby String.
    * Drop-in replacement of `downcase`.
