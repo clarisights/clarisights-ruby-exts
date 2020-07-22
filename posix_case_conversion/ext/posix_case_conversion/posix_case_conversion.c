@@ -1,5 +1,3 @@
-#include <string.h>
-#include <stdlib.h>
 #include <wctype.h>
 #include <ruby.h>
 #include <ruby/encoding.h>
@@ -25,16 +23,21 @@ static rb_encoding *utf8_enc = NULL;
  */
 #define MAX_ENC_LEN 4
 
+/*
+ * Downcases the supplied string according to POSIX locale semantics. Returns
+ * a freshly allocated string that the caller is responsible for.
+ */
 static char *
-rb_utf8_str_posix_downcase_cstr(VALUE rb_string)
+posix_downcase(const char *string, size_t len)
 {
   char *input_str, *output_str;
   size_t input_bytes, output_bytes;
   wchar_t *workspace;
   size_t curr_char;
 
-  input_bytes = RSTRING_LEN(rb_string);
-  input_str = strndup(RSTRING_PTR(rb_string), input_bytes);
+  input_bytes = len;
+  // The supplied string may not be NULL-terminated, which mbstowcs requires
+  input_str = strndup(string, input_bytes);
   workspace = (wchar_t *) malloc((input_bytes + 1) * sizeof(wchar_t));
   /* convert multibyte to wide character */
   mbstowcs(workspace, input_str, input_bytes + 1);
@@ -79,7 +82,7 @@ rb_utf8_str_posix_downcase(VALUE rb_string)
                rb_enc_name(utf8_enc));
     }
 
-  result_cstr = rb_utf8_str_posix_downcase_cstr(rb_string);
+  result_cstr = posix_downcase(RSTRING_PTR(rb_string), RSTRING_LEN(rb_string));
   result = rb_enc_str_new_cstr(result_cstr, utf8_enc);
 
   /* free resources */
