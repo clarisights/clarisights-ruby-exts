@@ -1,0 +1,10 @@
+require "rake/extensiontask"
+
+gemspec = Gem::Specification.load File.join(__dir__, 'posix_downcase.gemspec')
+
+Rake::ExtensionTask.new("posix_downcase", gemspec) do |ext|
+  ext.lib_dir = "lib/posix_downcase"
+  ext.ext_dir = 'ext/posix_downcase'
+end
+
+task default: :compile

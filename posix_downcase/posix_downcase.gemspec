@@ -3,7 +3,7 @@ $:.push File.expand_path("lib", __dir__)
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |spec|
-  spec.name        = "posix_case_conversion"
+  spec.name        = "posix_downcase"
   spec.version     = '0.0.1'
   spec.authors     = ["Annotation Clarisights"]
   spec.email       = ["annotation@clarisights.com"]
@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   end
 
   spec.files = Dir["{ext,lib}/**/*", "Rakefile", "README.md"]
-  spec.extensions << 'ext/posix_case_conversion/extconf.rb'
+  spec.extensions << 'ext/posix_downcase/extconf.rb'
 
   spec.add_development_dependency 'rake-compiler'
 end

@@ -127,7 +127,7 @@ rb_utf8_str_posix_downcase(VALUE rb_string)
 }
 
 void
-Init_posix_case_conversion(void)
+Init_posix_downcase(void)
 {
   utf8_enc = rb_utf8_encoding();
   usascii_enc = rb_usascii_encoding();
