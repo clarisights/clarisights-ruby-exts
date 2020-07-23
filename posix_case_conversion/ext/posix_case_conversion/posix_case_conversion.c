@@ -26,7 +26,8 @@ static rb_encoding *usascii_enc = NULL;
 
 /*
  * Downcases the supplied string according to US-ASCII semantics.
- * Returns a freshly allocated string that the caller is responsible for.
+ * Returns a freshly allocated string (of length len) that the caller is
+ * responsible for.
  */
 static char *
 posix_downcase_usascii(const char *string, size_t len)
@@ -109,13 +110,15 @@ rb_utf8_str_posix_downcase(VALUE rb_string)
   input_str = RSTRING_PTR(rb_string);
   len = RSTRING_LEN(rb_string);
   /* Downcase string based on rb_string encoding */
-  if (input_str_enc == utf8_enc)
+  if (input_str_enc == utf8_enc) {
     result_cstr = posix_downcase_utf8(input_str, len);
-  else
+    result = rb_utf8_str_new_cstr(result_cstr);
+  }
+  else {
     /* This will be US-ASCII since we only support two encodings */
     result_cstr = posix_downcase_usascii(input_str, len);
-
-  result = rb_enc_str_new_cstr(result_cstr, input_str_enc);
+    result = rb_usascii_str_new(result_cstr, len);
+  }
 
   /* free resources */
   free(result_cstr);
