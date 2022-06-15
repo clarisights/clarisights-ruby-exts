@@ -1,0 +1,11 @@
+Makefile
+mkmf.log
+*.bundle
+*.o
+*.so
+conftest.dSYM
+tmp
+*.gem
+.yardoc
+doc
+Gemfile.lock
