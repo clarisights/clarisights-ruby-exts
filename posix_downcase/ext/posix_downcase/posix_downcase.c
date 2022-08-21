@@ -82,7 +82,7 @@ posix_downcase_utf8(const char *string, size_t len)
   return output_str;
 }
 
-static VALUE
+VALUE
 rb_utf8_str_posix_downcase(VALUE rb_string)
 {
   char *result_cstr;
